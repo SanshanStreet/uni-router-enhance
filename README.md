@@ -119,8 +119,6 @@ const goToProfile = () => {
 #### 页面关闭策略
 
 ```typescript
-import { CloseTypes } from 'uni-router-enhance'
-
 // 默认: navigateTo - 保留当前页面
 push({
   path: 'detail'
@@ -129,18 +127,13 @@ push({
 // redirectTo - 关闭当前页面
 push({
   path: 'login'
+  close: 'current'
 })
 
 // reLaunch - 关闭所有页面
 push({
   path: 'index',
   close: 'all'
-})
-
-// 也可以使用字符串
-push({
-  path: 'home',
-  close: 'current'
 })
 ```
 
