@@ -123,8 +123,7 @@ import { CloseTypes } from 'uni-router-enhance'
 
 // 默认: navigateTo - 保留当前页面
 push({
-  path: 'detail',
-  close: CloseTypes.default
+  path: 'detail'
 })
 
 // redirectTo - 关闭当前页面
