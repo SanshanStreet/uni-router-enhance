@@ -1,7 +1,7 @@
 {
   "name": "uni-router-enhance",
   "version": "1.0.0",
-  "description": "",
+  "description": "一个为 uni-app 设计的类型安全路由增强库，提供完整的 TypeScript 支持、路由守卫、动态处理函数等高级特性",
   "files": [
     "dist"
   ],
@@ -16,13 +16,32 @@
       "default": "./dist/index.mjs"
     }
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SanshanStreet/uni-router-enhance.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SanshanStreet/uni-router-enhance/issues"
+  },
+  "homepage": "https://github.com/SanshanStreet/uni-router-enhance#readme",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "test": "cd ./examples && pnpm run dev:h5"
+    "test": "cd ./examples && pnpm run dev:h5",
+    "prepublishOnly": "pnpm run build"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "uni-app",
+    "router",
+    "typescript",
+    "type-safe",
+    "navigation",
+    "vue",
+    "uniapp",
+    "路由",
+    "类型安全"
+  ],
+  "author": "SanshanStreet",
   "license": "MIT",
   "packageManager": "pnpm@10.13.1",
   "dependencies": {
