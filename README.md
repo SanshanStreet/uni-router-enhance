@@ -1,7 +1,4 @@
 # uni-router-enhance
-<<<<<<< HEAD
-一个为 uni-app 设计的**类型安全**路由增强库，提供完整的 TypeScript 类型支持、路由守卫、动态处理函数等高级特性。
-=======
 
 一个为 uni-app 设计的**类型安全**路由增强库，提供完整的 TypeScript 类型支持、路由守卫、动态处理函数等高级特性。
 
@@ -701,4 +698,3 @@ MIT License
 ---
 
 **Made with ❤️ for uni-app developers**
->>>>>>> de406a6 (chore: initial commit - uni-router-enhance v1.0.0)
