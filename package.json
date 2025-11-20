@@ -1,6 +1,6 @@
 {
   "name": "uni-router-enhance",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "一个为 uni-app 设计的类型安全路由增强库，提供完整的 TypeScript 支持、路由守卫、动态处理函数等高级特性",
   "files": [
     "dist"
