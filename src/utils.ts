@@ -75,9 +75,9 @@ export function parseRoutesFromPagesJson<TName extends string>(routes: PagesConf
 			const root = subpackage.root;
 			subpackage.pages.forEach(page => {
 				const fullPath = `${root}/${page.path}`;
-				const name = extractSecondPathSegment(fullPath);
+				const name = extractSecondPathSegment(fullPath) as TName;;
 				if (name) {
-					routes.set(name, {
+					routeMeta.set(name, {
 						...page,
 						name,
 						isTabBar: tabBarPaths.has(fullPath) || page.type === "tabBar",
