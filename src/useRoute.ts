@@ -12,6 +12,52 @@ interface UniPageInstance extends Page.PageInstance<AnyObject, Record<string, an
 	options?: Record<string, string>;
 }
 
+type RuntimePageInstance = UniPageInstance & {
+	$page?: {
+		options?: Record<string, string>;
+		fullPath?: string;
+	};
+};
+
+const parseQueryString = (queryString?: string): Record<string, string> => {
+	if (!queryString) return {};
+	return queryString.split("&").reduce<Record<string, string>>((acc, segment) => {
+		if (!segment) return acc;
+		const [rawKey, rawValue = ""] = segment.split("=");
+		const key = decodeURIComponent(rawKey);
+		const value = decodeURIComponent(rawValue);
+		acc[key] = value;
+		return acc;
+	}, {});
+};
+
+const resolvePageOptions = (page?: UniPageInstance): Record<string, any> => {
+	if (!page) return {};
+	const runtimePage = page as RuntimePageInstance;
+	const sources: Record<string, any>[] = [];
+
+	if (page.options && Object.keys(page.options).length > 0) {
+		sources.push(page.options);
+	}
+
+	if (runtimePage.$page?.options && Object.keys(runtimePage.$page.options).length > 0) {
+		sources.push(runtimePage.$page.options);
+	}
+
+	if (runtimePage.$page?.fullPath) {
+		const queryIndex = runtimePage.$page.fullPath.indexOf("?");
+		if (queryIndex !== -1) {
+			sources.push(parseQueryString(runtimePage.$page.fullPath.slice(queryIndex + 1)));
+		}
+	}
+
+	if (sources.length === 0) {
+		return {};
+	}
+
+	return Object.assign({}, ...sources);
+};
+
 /**
  * useRoute 返回的路由信息
  */
@@ -56,10 +102,12 @@ export function createRouteHook<TName extends string>(router: RouterCore<TName>)
 	// 获取页面缓存数据(包含 query 和 handlerResult)
 	const cache = router.getPageCache(routeName as TName);
 
-	// 合并查询参数: 缓存的 query + URL 中的 options
+	const runtimeQuery = resolvePageOptions(currentPage);
+
+	// 合并查询参数: URL 中的参数为基础,缓存的 query(如果存在)覆盖它以保留原始类型
 	const mergedQuery: Record<string, any> = {
+		...runtimeQuery,
 		...cache?.query,
-		...currentPage.options,
 	};
 
 	return {

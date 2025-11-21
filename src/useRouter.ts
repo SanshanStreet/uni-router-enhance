@@ -193,6 +193,12 @@ export function createRouterHook<TName extends string>(router: RouterCore<TName>
 	 * 导出给外部使用的 push，支持额外回调合并。
 	 */
 	const push: TypeSafePush<TName> = async (data, callbacks) => {
+		if (data == null) {
+			const error = new Error('路由参数不能为空');
+			callbacks?.fail?.(error);
+			throw error;
+		}
+
 		const routeData = typeof data === 'string' ? { path: data } : data;
 		const finalRouteData: RouterParams<TName> = {
 			...routeData,
