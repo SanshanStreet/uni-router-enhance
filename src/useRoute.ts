@@ -1,3 +1,5 @@
+import { onMounted, reactive } from 'vue';
+import type { UnwrapRef } from 'vue';
 import type { RouterCore } from './create';
 import type { RouteMeta } from './type';
 import { extractSecondPathSegment } from './utils';
@@ -78,42 +80,53 @@ export interface RouteInfo<TName extends string> {
  * @returns 当前页面的路由信息
  */
 export function createRouteHook<TName extends string>(router: RouterCore<TName>): RouteInfo<TName> {
-	// 获取当前页面实例
-	const pages = getCurrentPages();
-	const currentPage = pages[pages.length - 1] as UniPageInstance | undefined;
+	// 初始化响应式状态,在组件挂载后填充运行时数据
+	const state = reactive<RouteInfo<TName>>({
+		name: '' as TName,
+		meta: undefined,
+		query: {},
+		handlerResult: undefined,
+	});
 
-	// 如果没有当前页面,返回空信息
-	if (!currentPage?.route) {
-		console.warn('无法获取当前页面的路由信息');
-		return {
-			name: '' as TName,
-			meta: undefined,
-			query: {},
-			handlerResult: undefined,
+	onMounted(() => {
+		// 获取当前页面实例
+		const pages = getCurrentPages();
+		const currentPage = pages[pages.length - 1] as UniPageInstance | undefined;
+
+		// 如果没有当前页面,保留默认空状态并打印警告
+		if (!currentPage?.route) {
+			// 运行时未能获取到 page 实例
+			// 不抛错，只是保留空状态以避免阻断调用方
+			// 日志便于调试
+			// eslint-disable-next-line no-console
+			console.warn('无法获取当前页面的路由信息');
+			return;
+		}
+
+		// 从路由路径提取路由名称
+		const routeName = extractSecondPathSegment(currentPage.route) as TName;
+
+		// 获取路由元信息
+		const meta = router.getRouteMeta(routeName);
+
+		// 获取页面缓存数据(包含 query 和 handlerResult)
+		const cache = router.getPageCache(routeName as TName);
+
+		const runtimeQuery = resolvePageOptions(currentPage);
+
+		// 合并查询参数: URL 中的参数为基础,缓存的 query(如果存在)覆盖它以保留原始类型
+		const mergedQuery: Record<string, any> = {
+			...runtimeQuery,
+			...cache?.query,
+			...currentPage?.options,
 		};
-	}
+		state.name = routeName as unknown as UnwrapRef<TName>;
+		state.meta = meta;
+		state.query = mergedQuery;
+		state.handlerResult = cache?.handlerResult;
+		state.handlerResult = cache?.handlerResult;
+	});
 
-	// 从路由路径提取路由名称
-	const routeName = extractSecondPathSegment(currentPage.route) as TName;
-
-	// 获取路由元信息
-	const meta = router.getRouteMeta(routeName);
-
-	// 获取页面缓存数据(包含 query 和 handlerResult)
-	const cache = router.getPageCache(routeName as TName);
-
-	const runtimeQuery = resolvePageOptions(currentPage);
-
-	// 合并查询参数: URL 中的参数为基础,缓存的 query(如果存在)覆盖它以保留原始类型
-	const mergedQuery: Record<string, any> = {
-		...runtimeQuery,
-		...cache?.query,
-	};
-
-	return {
-		name: routeName,
-		meta,
-		query: mergedQuery,
-		handlerResult: cache?.handlerResult,
-	};
+	// 类型声明需要一个普通的 `RouteInfo<TName>`，将响应式对象断言为该类型以兼容 d.ts 输出。
+	return state as unknown as RouteInfo<TName>;
 }

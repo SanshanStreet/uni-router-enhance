@@ -28,6 +28,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "cd ./examples && pnpm run dev:h5",
+    "test:weixin": "cd ./examples && pnpm run dev:mp-weixin",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [
