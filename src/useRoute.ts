@@ -134,7 +134,7 @@ export function createRouteHook<TName extends string>(router: RouterCore<TName>)
 		// 合并查询参数: URL 中的参数为基础,缓存的 query(如果存在)覆盖它以保留原始类型
 		const mergedQuery: Record<string, any> = {
 			...runtimeQuery,
-			...cache?.query,
+			...(cache?.query ? decodeQuery(cache.query) : {}),
 		};
 		state.name = routeName as unknown as UnwrapRef<TName>;
 		state.meta = meta;
