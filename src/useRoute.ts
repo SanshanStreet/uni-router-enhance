@@ -21,6 +21,23 @@ type RuntimePageInstance = UniPageInstance & {
 	};
 };
 
+const decodeQuery = (query: Record<string, any>): Record<string, any> => {
+	const decoded: Record<string, any> = {};
+	for (const key in query) {
+		const value = query[key];
+		if (typeof value === 'string') {
+			try {
+				decoded[key] = decodeURIComponent(value);
+			} catch {
+				decoded[key] = value;
+			}
+		} else {
+			decoded[key] = value;
+		}
+	}
+	return decoded;
+};
+
 const parseQueryString = (queryString?: string): Record<string, string> => {
 	if (!queryString) return {};
 	return queryString.split("&").reduce<Record<string, string>>((acc, segment) => {
@@ -39,11 +56,11 @@ const resolvePageOptions = (page?: UniPageInstance): Record<string, any> => {
 	const sources: Record<string, any>[] = [];
 
 	if (page.options && Object.keys(page.options).length > 0) {
-		sources.push(page.options);
+		sources.push(decodeQuery(page.options));
 	}
 
 	if (runtimePage.$page?.options && Object.keys(runtimePage.$page.options).length > 0) {
-		sources.push(runtimePage.$page.options);
+		sources.push(decodeQuery(runtimePage.$page.options));
 	}
 
 	if (runtimePage.$page?.fullPath) {
@@ -118,7 +135,6 @@ export function createRouteHook<TName extends string>(router: RouterCore<TName>)
 		const mergedQuery: Record<string, any> = {
 			...runtimeQuery,
 			...cache?.query,
-			...currentPage?.options,
 		};
 		state.name = routeName as unknown as UnwrapRef<TName>;
 		state.meta = meta;
