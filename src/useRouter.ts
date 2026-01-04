@@ -1,7 +1,7 @@
 import type { RouterCore } from './create';
 import type { RouteLocationNormalized, RouteLocationRaw } from './create';
 import { CloseTypes, RouterParams, TypeSafePush } from './type';
-import { ensureLeadingSlash, buildUrlWithQuery, resolveCloseType, extractSecondPathSegment } from './utils';
+import { ensureLeadingSlash, buildUrlWithQuery, resolveCloseType } from './utils';
 
 
 const performNavigation = async (url: string, close: CloseTypes): Promise<void> => {
@@ -52,7 +52,7 @@ export function createRouterHook<TName extends string>(router: RouterCore<TName>
 		if (!currentPage?.route) {
 			return '';
 		}
-		return (extractSecondPathSegment(currentPage.route) as TName) || '';
+		return router.resolveNameByUrl(currentPage.route) || '';
 	};
 
 	/**

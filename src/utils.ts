@@ -6,10 +6,29 @@ import { CloseInput, CloseTypes, RouteMeta } from "./type";
  * @param url 需要处理的URL
  * @returns 处理后的字符串
  */
+export type RouteNameStrategy = 'default' | 'package_page' | ((routePath: string) => string);
+
 export function extractSecondPathSegment(url: string): string {
 	const segments = url.split("/").slice(1, -1);
 	return segments.length === 1 ? segments[0] : segments.join("_");
 }
+
+export const resolveRouteName = (routePath: string, strategy: RouteNameStrategy = 'default'): string | undefined => {
+	if (typeof strategy === 'function') {
+		return strategy(routePath);
+	}
+
+	const normalized = routePath.replace(/^\/+/, '').replace(/\.vue$/i, '');
+	if (strategy === 'package_page') {
+		const segments = normalized.split('/').filter(Boolean);
+		if (segments[segments.length - 1] === 'index') {
+			segments.pop();
+		}
+		return segments.length > 0 ? segments.join('_') : undefined;
+	}
+
+	return extractSecondPathSegment(routePath);
+};
 
 const isEnumValue = <T extends Record<string, string>>(enumObject: T, value: unknown): value is T[keyof T] =>
 	Object.values(enumObject).includes(value as T[keyof T]);
@@ -44,7 +63,7 @@ export const resolveCloseType = (close: CloseInput): CloseTypes => {
  * @param routes - pages.json 配置对象
  * @returns 路由元信息映射
  */
-export function parseRoutesFromPagesJson<TName extends string>(routes: PagesConfig) {
+export function parseRoutesFromPagesJson<TName extends string>(routes: PagesConfig, namingStrategy: RouteNameStrategy = 'default') {
 	const routeMeta = new Map<TName, RouteMeta>();
 	// 获取 TabBar 页面路径集合
 	const tabBarPaths = new Set<string>();
@@ -57,7 +76,7 @@ export function parseRoutesFromPagesJson<TName extends string>(routes: PagesConf
 	// 处理主包页面
 	if (routes.pages) {
 		routes.pages.forEach(page => {
-			const name = extractSecondPathSegment(page.path) as TName;
+			const name = resolveRouteName(page.path, namingStrategy) as TName;
 			if (name) {
 				routeMeta.set(name, {
 					...page,
@@ -75,7 +94,7 @@ export function parseRoutesFromPagesJson<TName extends string>(routes: PagesConf
 			const root = subpackage.root;
 			subpackage.pages.forEach(page => {
 				const fullPath = `${root}/${page.path}`;
-				const name = extractSecondPathSegment(fullPath) as TName;;
+				const name = resolveRouteName(fullPath, namingStrategy) as TName;;
 				if (name) {
 					routeMeta.set(name, {
 						...page,

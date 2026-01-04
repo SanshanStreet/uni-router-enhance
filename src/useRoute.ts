@@ -121,7 +121,7 @@ export function createRouteHook<TName extends string>(router: RouterCore<TName>)
 		}
 
 		// 从路由路径提取路由名称
-		const routeName = extractSecondPathSegment(currentPage.route) as TName;
+		const routeName = (router.resolveNameByUrl(currentPage.route) || extractSecondPathSegment(currentPage.route)) as TName;
 
 		// 获取路由元信息
 		const meta = router.getRouteMeta(routeName);

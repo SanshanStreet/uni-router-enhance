@@ -2,11 +2,16 @@ import { createRouterHook, RouterHookResult } from './useRouter';
 import { createRouteHook, RouteInfo } from './useRoute';
 import type { RouteMeta } from './type';
 import { PagesConfig } from './pages';
-import { parseRoutesFromPagesJson } from './utils';
+import { parseRoutesFromPagesJson, RouteNameStrategy } from './utils';
 
 // 导出类型供外部使用
 export type { RouteInfo, RouterHookResult, RouteMeta };
 export { CloseTypes, RouterParams } from './type';
+
+
+export interface CreateRouterOptions {
+    namingStrategy?: RouteNameStrategy;
+}
 
 type RouteHandler = (payload?: unknown) => unknown | Promise<unknown>;
 
@@ -115,6 +120,10 @@ export interface RouterCore<TName extends string> {
      * 删除页面缓存数据
      */
     deletePageCache(url: TName): void;
+    /**
+     * 根据 pages.json 原始 url 解析出路由名称
+     */
+    resolveNameByUrl(routePath: string): TName | undefined;
 }
 
 /**
@@ -154,9 +163,9 @@ export interface Router<TName extends string> {
 /**
  * 创建一个路由实例，泛型 TName 表示允许的路由名称（通常为字符串字面量联合类型）。
  */
-export function createRouter<const TRoutes extends Record<string, RouteMeta>>(routes: PagesConfig): Router<Extract<keyof TRoutes, string>>;
-export function createRouter<TName extends string>(routes?: PagesConfig): Router<TName>;
-export function createRouter<TName extends string>(routes?: PagesConfig): Router<TName> {
+export function createRouter<const TRoutes extends Record<string, RouteMeta>>(routes: PagesConfig, options?: CreateRouterOptions): Router<Extract<keyof TRoutes, string>>;
+export function createRouter<TName extends string>(routes?: PagesConfig, options?: CreateRouterOptions): Router<TName>;
+export function createRouter<TName extends string>(routes?: PagesConfig, options?: CreateRouterOptions): Router<TName> {
     // 存储路由处理函数的映射表
     const handlers = new Map<TName, RouteHandler>();
     // beforeEach 导航守卫数组
@@ -169,8 +178,10 @@ export function createRouter<TName extends string>(routes?: PagesConfig): Router
     const pageCache = new Map<TName, { query: Record<string, any>; handlerResult?: unknown }>();
 
     // 如果提供了 pages.json 配置,解析并注册所有路由
+    const namingStrategy = options?.namingStrategy || 'default';
+
     if (routes) {
-        parseRoutesFromPagesJson(routes).forEach((meta, name) => {
+        parseRoutesFromPagesJson(routes, namingStrategy).forEach((meta, name) => {
             routeMeta.set(name as TName, meta);
         });
     }
@@ -292,6 +303,13 @@ export function createRouter<TName extends string>(routes?: PagesConfig): Router
         setPageCache: (name, data) => pageCache.set(name, data),
         getPageCache: (name) => pageCache.get(name),
         deletePageCache: (name) => pageCache.delete(name),
+        resolveNameByUrl: (routePath: string) => {
+            const normalized = routePath.replace(/^\/+/, '');
+            for (const [name, meta] of routeMeta.entries()) {
+                if (meta.url === normalized) return name;
+            }
+            return undefined;
+        },
     };
 
     // 创建 useRouter 工厂函数,闭包持有完整的 routerImpl
