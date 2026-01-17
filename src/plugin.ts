@@ -18,7 +18,6 @@ export interface RouteTypesPluginOptions {
 	namingStrategy?: RouteNameStrategy;
 }
 
-
 /**
  * 从 pages.json 中提取所有路由名称
  * @param pagesJson pages.json 配置对象
@@ -59,9 +58,9 @@ function extractRouteNamesFromPages(pagesJson: PagesConfig, namingStrategy: Rout
  * @param typeName 类型名称
  * @returns TypeScript 类型定义字符串
  */
-function generateTypeDefinition(routeNames: string[], typeName: string = 'ENHANCE_ROUTE_PATH'): string {
+function generateTypeDefinition(routeNames: string[], typeName: string = "ENHANCE_ROUTE_PATH"): string {
 	const sortedRoutes = [...routeNames].sort((a, b) => a.localeCompare(b));
-	return `export type ${typeName} =\n${sortedRoutes.map(name => `  | '${name}'`).join('\n')}`;
+	return `export type ${typeName} =\n${sortedRoutes.map(name => `  | '${name}'`).join("\n")}`;
 }
 
 /**
@@ -70,7 +69,7 @@ function generateTypeDefinition(routeNames: string[], typeName: string = 'ENHANC
  * @returns 解析后的配置对象
  */
 function readPagesJson(pagesJsonPath: string): PagesConfig {
-	const content = fs.readFileSync(pagesJsonPath, 'utf8');
+	const content = fs.readFileSync(pagesJsonPath, "utf8");
 	return JSON.parse(content);
 }
 
@@ -83,24 +82,28 @@ function readPagesJson(pagesJsonPath: string): PagesConfig {
 function generateRouteTypeFile(
 	dts: string,
 	pagesJsonPath: string,
-	options?: { typeName?: string; generator?: (routeNames: string[], typeName: string) => string; namingStrategy?: RouteNameStrategy }
+	options?: {
+		typeName?: string;
+		generator?: (routeNames: string[], typeName: string) => string;
+		namingStrategy?: RouteNameStrategy;
+	}
 ): void {
 	const pagesJson = readPagesJson(pagesJsonPath);
-	const routeNames = extractRouteNamesFromPages(pagesJson, options?.namingStrategy || 'default');
-	const typeName = options?.typeName || 'ENHANCE_ROUTE_PATH';
+	const routeNames = extractRouteNamesFromPages(pagesJson, options?.namingStrategy || "default");
+	const typeName = options?.typeName || "ENHANCE_ROUTE_PATH";
 	const typeDefinition = options?.generator
 		? options.generator(Array.from(routeNames), typeName)
 		: generateTypeDefinition(Array.from(routeNames), typeName);
-	fs.writeFileSync(dts, typeDefinition, 'utf8');
+	fs.writeFileSync(dts, typeDefinition, "utf8");
 }
 
 // 环境配置验证
 const getValidatedPaths = () => {
 	const inputDir = process.env.UNI_INPUT_DIR || `${process.env.INIT_CWD}/src`;
-	if (!inputDir || inputDir.trim() === '') {
-		throw new Error('Missing required environment variables: UNI_INPUT_DIR or INIT_CWD');
+	if (!inputDir || inputDir.trim() === "") {
+		throw new Error("Missing required environment variables: UNI_INPUT_DIR or INIT_CWD");
 	}
-	return path.resolve(inputDir, 'pages.json')
+	return path.resolve(inputDir, "pages.json");
 };
 
 /**
@@ -110,12 +113,10 @@ const getValidatedPaths = () => {
  */
 export function routeTypesPlugin(options: string | RouteTypesPluginOptions) {
 	let isFirstBuild = true;
-	const config: RouteTypesPluginOptions = typeof options === 'string'
-		? { dts: options }
-		: options;
+	const config: RouteTypesPluginOptions = typeof options === "string" ? { dts: options } : options;
 
 	return {
-		name: 'route-types-generator',
+		name: "route-types-generator",
 		/**
 		 * 构建开始时生成路由类型
 		 */
@@ -132,16 +133,15 @@ export function routeTypesPlugin(options: string | RouteTypesPluginOptions) {
 					isFirstBuild = false;
 				} catch (error) {
 					const message = error instanceof Error ? error.message : String(error);
-					console.warn('路由类型生成失败:', message);
+					console.warn("路由类型生成失败:", message);
 				}
 			}
 		},
 		/**
 		 * 热更新时监听 pages.json 变化
 		 */
-		handleHotUpdate(ctx: any) {
-			// 监听 pages.json 变化，自动重新生成类型
-			if (ctx.file.endsWith('pages.json')) {
+		watchChange(id: string, change: { event: string }) {
+			if (change.event === "update" && id.includes("pages.json")) {
 				try {
 					const pagesJsonPath = getValidatedPaths();
 					generateRouteTypeFile(config.dts, pagesJsonPath, {
@@ -149,13 +149,12 @@ export function routeTypesPlugin(options: string | RouteTypesPluginOptions) {
 						generator: config.generator,
 						namingStrategy: config.namingStrategy,
 					});
-					console.log('🔄 检测到 pages.json 变化，已自动更新路由类型');
+					console.log("🔄 检测到 pages.json 变化，已自动更新路由类型");
 				} catch (error) {
 					const message = error instanceof Error ? error.message : String(error);
-					console.warn('热更新时生成路由类型失败:', message);
+					console.warn("热更新时生成路由类型失败:", message);
 				}
 			}
 		},
 	};
 }
-
